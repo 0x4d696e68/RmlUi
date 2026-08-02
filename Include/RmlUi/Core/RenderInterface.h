@@ -138,6 +138,9 @@ public:
 	/// Called by RmlUi when it no longer needs a previously compiled shader.
 	/// @param[in] shader The handle to a previously compiled shader.
 	virtual void ReleaseShader(CompiledShaderHandle shader);
+
+	virtual void BackupSystemState() {}
+	virtual void RestoreSystemState() {}
 };
 
 } // namespace Rml
