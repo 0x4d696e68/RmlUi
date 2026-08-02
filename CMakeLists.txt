@@ -64,6 +64,8 @@ if(RMLUI_LUA_BINDINGS)
 	endif()
 endif()
 
+option(RMLUI_FREETYPE_SVG_PLUGIN "Enable plugin for freetype svg render." ON)
+
 option(RMLUI_LOTTIE_PLUGIN "Enable plugin for Lottie animations. Requires the rlottie library." OFF)
 option(RMLUI_SVG_PLUGIN "Enable plugin for SVG images. Requires the lunasvg library." OFF)
 
