@@ -10,7 +10,8 @@
 
 namespace Rml {
 
-enum class Unit;
+// Underlying type must match Unit.h: vx/vy/vm push the enum past 32 bits.
+enum class Unit : uint64_t;
 
 /**
     Templatised TypeConverters with Template Specialisation.

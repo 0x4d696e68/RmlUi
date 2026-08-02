@@ -115,7 +115,7 @@ Element::~Element()
 	num_non_dom_children = 0;
 }
 
-void Element::Update(float dp_ratio, Vector2f vp_dimensions)
+void Element::Update(float dp_ratio, Vector2f vp_dimensions, const Vector2f& viewport_scale)
 {
 #ifdef RMLUI_TRACY_PROFILING
 	auto name = GetAddress(false, false);
@@ -131,20 +131,20 @@ void Element::Update(float dp_ratio, Vector2f vp_dimensions)
 
 	meta->scroll.Update();
 
-	UpdateProperties(dp_ratio, vp_dimensions);
+	UpdateProperties(dp_ratio, vp_dimensions,viewport_scale);
 
 	// Do en extra pass over the animations and properties if the 'animation' property was just changed.
 	if (dirty_animation)
 	{
 		HandleAnimationProperty();
 		AdvanceAnimations();
-		UpdateProperties(dp_ratio, vp_dimensions);
+		UpdateProperties(dp_ratio, vp_dimensions,viewport_scale);
 	}
 
 	meta->effects.InstanceEffects();
 
 	for (size_t i = 0; i < children.size(); i++)
-		children[i]->Update(dp_ratio, vp_dimensions);
+		children[i]->Update(dp_ratio, vp_dimensions,viewport_scale);
 
 	if (!animations.empty() && IsVisible(true))
 	{
@@ -153,7 +153,7 @@ void Element::Update(float dp_ratio, Vector2f vp_dimensions)
 	}
 }
 
-void Element::UpdateProperties(const float dp_ratio, const Vector2f vp_dimensions)
+void Element::UpdateProperties(const float dp_ratio, const Vector2f vp_dimensions, const Vector2f& viewport_scale)
 {
 	UpdateDefinition();
 
@@ -164,7 +164,7 @@ void Element::UpdateProperties(const float dp_ratio, const Vector2f vp_dimension
 
 		// Compute values and clear dirty properties
 		PropertyIdSet dirty_properties = meta->style.ComputeValues(meta->computed_values, parent_values, document_values,
-			computed_values_are_default_initialized, dp_ratio, vp_dimensions);
+			computed_values_are_default_initialized, dp_ratio, vp_dimensions,viewport_scale, this->GetContext());
 
 		computed_values_are_default_initialized = false;
 

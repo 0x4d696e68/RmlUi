@@ -232,9 +232,10 @@ void ElementDocument::ProcessHeader(const DocumentHeader* document_header)
 
 	const float dp_ratio = (context ? context->GetDensityIndependentPixelRatio() : 1.0f);
 	const Vector2f vp_dimensions = (context ? Vector2f(context->GetDimensions()) : Vector2f(1.0f));
+	const Vector2f viewport_scale = (context ? context->GetViewportScale() : Vector2f(1.0f));
 
 	// Update properties so that e.g. visibility status can be queried properly immediately.
-	UpdateProperties(dp_ratio, vp_dimensions);
+	UpdateProperties(dp_ratio, vp_dimensions,viewport_scale);
 }
 
 Context* ElementDocument::GetContext()
@@ -466,7 +467,8 @@ void ElementDocument::UpdateDocument()
 {
 	const float dp_ratio = (context ? context->GetDensityIndependentPixelRatio() : 1.0f);
 	const Vector2f vp_dimensions = (context ? Vector2f(context->GetDimensions()) : Vector2f(1.0f));
-	Update(dp_ratio, vp_dimensions);
+	const Vector2f viewport_scale = (context ? context->GetViewportScale() : Vector2f(1.0f));
+	Update(dp_ratio, vp_dimensions, viewport_scale);
 	UpdateLayout();
 	UpdatePosition();
 }
@@ -551,6 +553,11 @@ bool ElementDocument::IsLayoutDirty()
 void ElementDocument::DirtyVwAndVhProperties()
 {
 	GetStyle()->DirtyPropertiesWithUnitsRecursive(Unit::VW | Unit::VH);
+}
+
+void ElementDocument::DirtyDxAndDyProperties()
+{
+	GetStyle()->DirtyPropertiesWithUnitsRecursive(Unit::VX | Unit::VY | Unit::VM);
 }
 
 void ElementDocument::OnPropertyChange(const PropertyIdSet& changed_properties)

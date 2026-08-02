@@ -150,6 +150,7 @@ private:
 
 	/// Updates all sizes defined by the 'vw' and the 'vh' units.
 	void DirtyVwAndVhProperties();
+	void DirtyDxAndDyProperties();
 
 	/// Updates the layout if necessary.
 	void UpdateLayout();

@@ -50,6 +50,8 @@ public:
 	/// @param[in] element The element to determine the density-independent pixel ratio for.
 	/// @return The density-independent pixel ratio of the context, or 1.0 if no context assigned.
 	static float GetDensityIndependentPixelRatio(Element* element);
+
+	static Vector2f GetViewportScale(Element*element);
 	/// Returns the width of a string rendered within the context of the given element.
 	/// @param[in] element The element to measure the string from.
 	/// @param[in] string The string to measure.
