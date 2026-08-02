@@ -238,7 +238,7 @@ void Factory::Initialise()
 	RegisterDataViewInstancer(&default_instancers.data_view_class,          "class",   false);
 	RegisterDataViewInstancer(&default_instancers.data_view_if,             "if",      false);
 	RegisterDataViewInstancer(&default_instancers.data_view_visible,        "visible", false);
-	RegisterDataViewInstancer(&default_instancers.data_view_rml,            "rml",     false);
+	RegisterDataViewInstancer(&default_instancers.data_view_rml,            "html",     false);
 	RegisterDataViewInstancer(&default_instancers.data_view_style,          "style",   false);
 	RegisterDataViewInstancer(&default_instancers.data_view_text,           "text",    false);
 	RegisterDataViewInstancer(&default_instancers.data_view_value,          "value",   false);
