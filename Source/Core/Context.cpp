@@ -837,6 +837,11 @@ bool Context::ProcessMouseWheel(Vector2f wheel_delta, int key_modifier_state)
 		scroll_controller->Reset();
 		return true;
 	}
+	else if (drag)
+	{
+		scroll_controller->Reset();
+		return true;
+	}
 
 	Dictionary scroll_parameters;
 	GenerateMouseEventParameters(scroll_parameters);
