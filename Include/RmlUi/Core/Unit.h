@@ -1,11 +1,16 @@
 #pragma once
 
 #include "Header.h"
+#include <cstdint>
 #include <type_traits>
 
 namespace Rml {
 
-enum class Unit {
+// uint64_t rather than the default int: upstream reaches bit 29 and vx/vy/vm need
+// three more, which does not fit an int (bit 31 is its sign). Everything that
+// touches the underlying type does so through std::underlying_type, so widening it
+// costs 8 bytes on Property and NumericValue and nothing else.
+enum class Unit : uint64_t {
 	UNKNOWN = 0,
 
 	// Basic types.
@@ -55,11 +60,21 @@ enum class Unit {
 	VAR_EXPRESSION = 1 << 28,        // substituted and resolved at compute time; fetch as <String>
 	SHORTHAND_PLACEHOLDER = 1 << 29, // dependent on a shorthand that must be substituted and resolved at compute time; always empty
 
-	LENGTH = PX | DP | VW | VH | EM | REM | PPI_UNIT,
+	VX = 1ull << 30,
+	VY = 1ull << 31,
+	// The smaller of vx and vy. A layout measured in vx alone keeps growing with the
+	// window width, and one measured in vy alone with its height; vm follows whichever
+	// of the two is currently the tighter, so a cluster written in it scales without
+	// ever outgrowing the screen on either axis. There is no way to express that in
+	// RCSS itself - max-width/max-height can cap a box, but not a font-size, a margin
+	// or a position.
+	VM = 1ull << 32,
+
+	LENGTH = PX | DP | VW | VH | EM | REM | PPI_UNIT | VX | VY | VM,
 	LENGTH_PERCENT = LENGTH | PERCENT,
 	NUMBER_PERCENT = NUMBER | PERCENT,
 	NUMBER_LENGTH_PERCENT = NUMBER | LENGTH | PERCENT,
-	DP_SCALABLE_LENGTH = DP | PPI_UNIT,
+	DP_SCALABLE_LENGTH = DP | PPI_UNIT | VX | VY | VM,
 	ANGLE = DEG | RAD,
 	NUMERIC = NUMBER_LENGTH_PERCENT | ANGLE | X
 };

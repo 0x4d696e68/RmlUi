@@ -46,12 +46,17 @@ public:
 	/// @return The current dimensions of the context.
 	Vector2i GetDimensions() const;
 
+
+	void SetViewportScale(Vector2f _windowscale);
+
 	/// Changes the ratio of the 'dp' unit to the 'px' unit.
 	/// @param[in] dp_ratio The new density-independent pixel ratio of the context.
 	void SetDensityIndependentPixelRatio(float dp_ratio);
 	/// Returns the ratio of the 'dp' unit to the 'px' unit.
 	/// @return The current density-independent pixel ratio of the context.
 	float GetDensityIndependentPixelRatio() const;
+
+	Vector2f GetViewportScale() const;
 
 	/// Updates all elements in the context's documents.
 	/// This must be called before Context::Render, but after any elements have been changed, added, or removed.
@@ -299,6 +304,7 @@ protected:
 private:
 	String name;
 	Vector2i dimensions;
+	Vector2f window_scale;
 	float density_independent_pixel_ratio = 1.f;
 	String documents_base_tag = "body";
 

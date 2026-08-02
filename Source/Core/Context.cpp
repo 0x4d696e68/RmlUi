@@ -126,6 +126,14 @@ const String& Context::GetName() const
 	return name;
 }
 
+void Context::SetViewportScale(const Vector2f _windowscale)
+{
+	if (window_scale != _windowscale)
+	{
+		window_scale = _windowscale;
+	}
+}
+
 void Context::SetDimensions(const Vector2i _dimensions)
 {
 	if (dimensions != _dimensions)
@@ -141,6 +149,7 @@ void Context::SetDimensions(const Vector2i _dimensions)
 			if (document != nullptr)
 			{
 				document->DirtyMediaQueries();
+				document->DirtyDxAndDyProperties();
 				document->DirtyVwAndVhProperties();
 				document->DirtyLayout();
 				document->DirtyPosition();
@@ -178,6 +187,11 @@ float Context::GetDensityIndependentPixelRatio() const
 	return density_independent_pixel_ratio;
 }
 
+Vector2f Context::GetViewportScale() const
+{
+	return window_scale;
+}
+
 bool Context::Update()
 {
 	RMLUI_ZoneScoped;
@@ -202,7 +216,7 @@ bool Context::Update()
 	root->dirty_definition = false;
 	root->dirty_child_definitions = false;
 
-	root->Update(density_independent_pixel_ratio, Vector2f(dimensions));
+	root->Update(density_independent_pixel_ratio, Vector2f(dimensions), window_scale);
 
 	for (int i = 0; i < root->GetNumChildren(); ++i)
 	{

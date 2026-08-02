@@ -103,6 +103,15 @@ float ElementUtilities::GetDensityIndependentPixelRatio(Element* element)
 	return context->GetDensityIndependentPixelRatio();
 }
 
+Vector2f ElementUtilities::GetViewportScale(Element* element)
+{
+	Context* context = element->GetContext();
+	if (context == nullptr)
+		return Vector2f(1.0f);
+
+	return context->GetViewportScale();
+}
+
 int ElementUtilities::GetStringWidth(Element* element, StringView string, Character prior_character)
 {
 	const auto& computed = element->GetComputedValues();

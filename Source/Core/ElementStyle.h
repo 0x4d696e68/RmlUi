@@ -147,7 +147,8 @@ public:
 	/// Turns the local and inherited properties into computed values for this element. These values can in turn be used during the layout procedure.
 	/// Must be called in correct order, always parent before its children.
 	PropertyIdSet ComputeValues(Style::ComputedValues& values, const Style::ComputedValues* parent_values,
-		const Style::ComputedValues* document_values, bool values_are_default_initialized, float dp_ratio, Vector2f vp_dimensions);
+		const Style::ComputedValues* document_values, bool values_are_default_initialized, float dp_ratio, Vector2f vp_dimensions,
+		const Vector2f& viewport_scale, Context* context);
 
 	const Property* GetSpecifiedProperty(PropertyId id) { return GetSpecifiedProperty(GetPropertySources(), id).property; }
 	const Property* GetSpecifiedCustomProperty(const String& name) { return GetSpecifiedCustomProperty(GetPropertySources(), name).property; }
@@ -186,7 +187,8 @@ private:
 	const Property* ResolveVariables(PropertyId id, const Property* property, SmallUnorderedSet<String>& variable_dependencies,
 		Property& property_storage) const;
 
-	void ComputeValue(Style::ComputedValues& values, float dp_ratio, Vector2f vp_dimensions, float font_size, float document_font_size,
+	void ComputeValue(Style::ComputedValues& values, float dp_ratio, Vector2f vp_dimensions, const Vector2f& viewport_scale, float font_size,
+		float document_font_size,
 		bool& dirty_font_face_handle, PropertyId id, const Property* p);
 
 	static const Property* GetLocalProperty(PropertyId id, const PropertyDictionary& inline_properties, const ElementDefinition* definition);
