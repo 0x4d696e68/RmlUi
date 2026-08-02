@@ -192,6 +192,16 @@ Vector2f Context::GetViewportScale() const
 	return window_scale;
 }
 
+void Context::SetFontScale(float scale)
+{
+	font_scale = scale;
+}
+
+float Context::GetFontScale() const
+{
+	return font_scale;
+}
+
 bool Context::Update()
 {
 	RMLUI_ZoneScoped;

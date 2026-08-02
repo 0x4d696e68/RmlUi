@@ -38,6 +38,12 @@ FontFaceHandle FontEngineInterfaceDefault::GetFontFaceHandle(const String& famil
 	return reinterpret_cast<FontFaceHandle>(handle);
 }
 
+int FontEngineInterfaceDefault::SelectFontSize(FontFaceHandle handle, int pixel_size)
+{
+	auto handle_default = reinterpret_cast<FontFaceHandleDefault*>(handle);
+	return handle_default->SelectFontSize(pixel_size);
+}
+
 FontEffectsHandle FontEngineInterfaceDefault::PrepareFontEffects(FontFaceHandle handle, const FontEffectList& font_effects)
 {
 	auto handle_default = reinterpret_cast<FontFaceHandleDefault*>(handle);

@@ -58,6 +58,9 @@ public:
 
 	Vector2f GetViewportScale() const;
 
+	void SetFontScale(float scale);
+	float GetFontScale() const;
+
 	/// Updates all elements in the context's documents.
 	/// This must be called before Context::Render, but after any elements have been changed, added, or removed.
 	bool Update();
@@ -307,6 +310,7 @@ private:
 	Vector2f window_scale;
 	float density_independent_pixel_ratio = 1.f;
 	String documents_base_tag = "body";
+	float font_scale = 1.f;
 
 	// Wrapper around the render interface for tracking the render state.
 	RenderManager* render_manager;

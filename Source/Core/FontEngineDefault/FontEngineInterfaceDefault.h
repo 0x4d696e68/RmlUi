@@ -28,6 +28,8 @@ public:
 	/// valid handle.
 	FontFaceHandle GetFontFaceHandle(const String& family, Style::FontStyle style, Style::FontWeight weight, int size) override;
 
+	int SelectFontSize(FontFaceHandle handle, int pixel_size) override;
+
 	/// Prepares for font effects by configuring a new, or returning an existing, layer configuration.
 	FontEffectsHandle PrepareFontEffects(FontFaceHandle handle, const FontEffectList& font_effects) override;
 
