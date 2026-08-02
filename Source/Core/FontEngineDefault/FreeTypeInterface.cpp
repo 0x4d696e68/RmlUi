@@ -9,6 +9,13 @@
 #include FT_FREETYPE_H
 #include FT_MULTIPLE_MASTERS_H
 #include FT_TRUETYPE_TABLES_H
+#include FT_MODULE_H            // <freetype/ftmodapi.h>
+#include FT_GLYPH_H             // <freetype/ftglyph.h>
+#include FT_SYNTHESIS_H         // <freetype/ftsynth.h>
+
+#define PLUTOVG_BUILD_STATIC
+#define PLUTOSVG_BUILD_STATIC
+#include <plutosvg-ft.h>
 
 namespace Rml {
 
@@ -48,6 +55,13 @@ bool FreeType::Initialise()
 	{
 		Log::Message(Log::LT_ERROR, "Failed to initialise FreeType, error %d.", result);
 		Shutdown();
+		return false;
+	}
+
+	// use plutovg to render colored emojis
+	if (FT_Property_Set(ft_library, "ot-svg", "svg-hooks", &plutosvg_ft_hooks))
+	{
+		Log::Message(Log::LT_ERROR, "Unable to create font context (2)");
 		return false;
 	}
 
