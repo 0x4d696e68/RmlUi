@@ -591,11 +591,11 @@ public:
 	const ComputedValues& GetComputedValues() const;
 
 protected:
-	void Update(float dp_ratio, Vector2f vp_dimensions);
+	void Update(float dp_ratio, Vector2f vp_dimensions, const Vector2f& viewport_scale);
 	void Render();
 
 	/// Updates definition, computed values, and runs OnPropertyChange on this element.
-	void UpdateProperties(float dp_ratio, Vector2f vp_dimensions);
+	void UpdateProperties(float dp_ratio, Vector2f vp_dimensions, const Vector2f&viewport_scale);
 
 	/// Forces the element to generate a local stacking context, regardless of the value of its z-index property.
 	void ForceLocalStackingContext();

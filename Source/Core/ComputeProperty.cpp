@@ -49,7 +49,8 @@ static float ComputePPILength(NumericValue value, float dp_ratio)
 	return 0.f;
 }
 
-float ComputeLength(NumericValue value, float font_size, float document_font_size, float dp_ratio, Vector2f vp_dimensions)
+float ComputeLength(NumericValue value, float font_size, float document_font_size, float dp_ratio, Vector2f vp_dimensions,
+	const Vector2f& viewport_scale)
 {
 	if (Any(value.unit & Unit::PPI_UNIT))
 		return ComputePPILength(value, dp_ratio);
@@ -62,6 +63,9 @@ float ComputeLength(NumericValue value, float font_size, float document_font_siz
 	case Unit::DP: return value.number * dp_ratio;
 	case Unit::VW: return value.number * vp_dimensions.x * 0.01f;
 	case Unit::VH: return value.number * vp_dimensions.y * 0.01f;
+	case Unit::VX: return value.number * viewport_scale.x;
+	case Unit::VY: return value.number * viewport_scale.y;
+	case Unit::VM: return value.number * Math::Min(viewport_scale.x, viewport_scale.y);
 	default: break;
 	}
 
@@ -85,7 +89,7 @@ float ComputeAngle(NumericValue value)
 }
 
 float ComputeFontsize(NumericValue value, const Style::ComputedValues& values, const Style::ComputedValues* parent_values,
-	const Style::ComputedValues* document_values, float dp_ratio, Vector2f vp_dimensions)
+	const Style::ComputedValues* document_values, float dp_ratio, Vector2f vp_dimensions, const Vector2f& viewport_scale, Context* /*context*/)
 {
 	if (Any(value.unit & (Unit::PERCENT | Unit::EM | Unit::REM)))
 	{
@@ -114,7 +118,7 @@ float ComputeFontsize(NumericValue value, const Style::ComputedValues& values, c
 	}
 
 	// Font-relative lengths handled above, other lengths should be handled as normal.
-	return ComputeLength(value, 0.f, 0.f, dp_ratio, vp_dimensions);
+	return ComputeLength(value, 0.f, 0.f, dp_ratio, vp_dimensions,viewport_scale);
 }
 
 String ComputeFontFamily(String font_family)
@@ -133,11 +137,12 @@ Style::Clip ComputeClip(const Property* property)
 	return Style::Clip();
 }
 
-Style::LineHeight ComputeLineHeight(const Property* property, float font_size, float document_font_size, float dp_ratio, Vector2f vp_dimensions)
+Style::LineHeight ComputeLineHeight(const Property* property, float font_size, float document_font_size, float dp_ratio, Vector2f vp_dimensions,
+	const Vector2f& viewport_scale)
 {
 	if (Any(property->unit & Unit::LENGTH))
 	{
-		float value = ComputeLength(property->GetNumericValue(), font_size, document_font_size, dp_ratio, vp_dimensions);
+		float value = ComputeLength(property->GetNumericValue(), font_size, document_font_size, dp_ratio, vp_dimensions,viewport_scale);
 		return Style::LineHeight(value, Style::LineHeight::Length, value);
 	}
 
@@ -155,11 +160,11 @@ Style::LineHeight ComputeLineHeight(const Property* property, float font_size, f
 }
 
 Style::VerticalAlign ComputeVerticalAlign(const Property* property, float line_height, float font_size, float document_font_size, float dp_ratio,
-	Vector2f vp_dimensions)
+	Vector2f vp_dimensions, const Vector2f &viewport_scale)
 {
 	if (Any(property->unit & Unit::LENGTH))
 	{
-		float value = ComputeLength(property->GetNumericValue(), font_size, document_font_size, dp_ratio, vp_dimensions);
+		float value = ComputeLength(property->GetNumericValue(), font_size, document_font_size, dp_ratio, vp_dimensions, viewport_scale);
 		return Style::VerticalAlign(value);
 	}
 	else if (property->unit == Unit::PERCENT)
@@ -172,18 +177,18 @@ Style::VerticalAlign ComputeVerticalAlign(const Property* property, float line_h
 }
 
 Style::LengthPercentage ComputeLengthPercentage(const Property* property, float font_size, float document_font_size, float dp_ratio,
-	Vector2f vp_dimensions)
+	Vector2f vp_dimensions, const Vector2f& viewport_scale)
 {
 	using namespace Style;
 	if (property->unit == Unit::PERCENT)
 		return LengthPercentage(LengthPercentage::Percentage, property->Get<float>());
 
 	return LengthPercentage(LengthPercentage::Length,
-		ComputeLength(property->GetNumericValue(), font_size, document_font_size, dp_ratio, vp_dimensions));
+		ComputeLength(property->GetNumericValue(), font_size, document_font_size, dp_ratio, vp_dimensions, viewport_scale));
 }
 
 Style::LengthPercentageAuto ComputeLengthPercentageAuto(const Property* property, float font_size, float document_font_size, float dp_ratio,
-	Vector2f vp_dimensions)
+	Vector2f vp_dimensions, const Vector2f& viewport_scale)
 {
 	using namespace Style;
 	if (property->unit == Unit::PERCENT)
@@ -192,10 +197,11 @@ Style::LengthPercentageAuto ComputeLengthPercentageAuto(const Property* property
 		return LengthPercentageAuto(LengthPercentageAuto::Auto);
 
 	return LengthPercentageAuto(LengthPercentageAuto::Length,
-		ComputeLength(property->GetNumericValue(), font_size, document_font_size, dp_ratio, vp_dimensions));
+		ComputeLength(property->GetNumericValue(), font_size, document_font_size, dp_ratio, vp_dimensions, viewport_scale));
 }
 
-Style::LengthPercentage ComputeOrigin(const Property* property, float font_size, float document_font_size, float dp_ratio, Vector2f vp_dimensions)
+Style::LengthPercentage ComputeOrigin(const Property* property, float font_size, float document_font_size, float dp_ratio, Vector2f vp_dimensions,
+	const Vector2f& viewport_scale)
 {
 	using namespace Style;
 	static_assert(
@@ -217,10 +223,11 @@ Style::LengthPercentage ComputeOrigin(const Property* property, float font_size,
 		return LengthPercentage(LengthPercentage::Percentage, property->Get<float>());
 
 	return LengthPercentage(LengthPercentage::Length,
-		ComputeLength(property->GetNumericValue(), font_size, document_font_size, dp_ratio, vp_dimensions));
+		ComputeLength(property->GetNumericValue(), font_size, document_font_size, dp_ratio, vp_dimensions, viewport_scale));
 }
 
-Style::LengthPercentage ComputeMaxSize(const Property* property, float font_size, float document_font_size, float dp_ratio, Vector2f vp_dimensions)
+Style::LengthPercentage ComputeMaxSize(const Property* property, float font_size, float document_font_size, float dp_ratio, Vector2f vp_dimensions,
+	const Vector2f& viewport_scale)
 {
 	using namespace Style;
 	if (Any(property->unit & Unit::KEYWORD))
@@ -228,7 +235,7 @@ Style::LengthPercentage ComputeMaxSize(const Property* property, float font_size
 	else if (Any(property->unit & Unit::PERCENT))
 		return LengthPercentage(LengthPercentage::Percentage, property->Get<float>());
 
-	const float length = ComputeLength(property->GetNumericValue(), font_size, document_font_size, dp_ratio, vp_dimensions);
+	const float length = ComputeLength(property->GetNumericValue(), font_size, document_font_size, dp_ratio, vp_dimensions, viewport_scale);
 	return LengthPercentage(LengthPercentage::Length, length < 0.f ? FLT_MAX : length);
 }
 
