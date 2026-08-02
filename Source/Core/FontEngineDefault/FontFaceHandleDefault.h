@@ -61,6 +61,8 @@ public:
 	/// Version is changed whenever the layers are dirtied, requiring regeneration of string geometry.
 	int GetVersion() const;
 
+	int SelectFontSize(int pixel_size);
+
 private:
 	// Build and append glyph to 'glyphs'
 	bool AppendGlyph(Character character);

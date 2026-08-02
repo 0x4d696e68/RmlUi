@@ -275,6 +275,11 @@ int FontFaceHandleDefault::GetVersion() const
 	return version;
 }
 
+int FontFaceHandleDefault::SelectFontSize(int pixel_size)
+{
+	return pixel_size;
+}
+
 bool FontFaceHandleDefault::AppendGlyph(Character character)
 {
 	bool result = FreeType::AppendGlyph(ft_face, metrics.size, character, glyphs);

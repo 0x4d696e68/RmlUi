@@ -67,6 +67,8 @@ public:
 	/// @return A valid handle if a matching (or closely matching) font face was found, NULL otherwise.
 	virtual FontFaceHandle GetFontFaceHandle(const String& family, Style::FontStyle style, Style::FontWeight weight, int size);
 
+	virtual int SelectFontSize(FontFaceHandle /*handle*/, int pixel_size);
+
 	/// Called by RmlUi when a list of font effects is resolved for an element with a given font face.
 	/// @param[in] handle The font handle.
 	/// @param[in] font_effects The list of font effects to generate the configuration for.

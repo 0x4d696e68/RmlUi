@@ -34,6 +34,11 @@ FontFaceHandle FontEngineInterface::GetFontFaceHandle(const String& /*family*/, 
 	return 0;
 }
 
+int FontEngineInterface::SelectFontSize(FontFaceHandle /*handle*/, int pixel_size)
+{
+	return pixel_size;
+}
+
 FontEffectsHandle FontEngineInterface::PrepareFontEffects(FontFaceHandle /*handle*/, const FontEffectList& /*font_effects*/)
 {
 	return 0;
