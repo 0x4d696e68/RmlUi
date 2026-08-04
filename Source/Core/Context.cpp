@@ -131,6 +131,16 @@ void Context::SetViewportScale(const Vector2f _windowscale)
 	if (window_scale != _windowscale)
 	{
 		window_scale = _windowscale;
+
+		for (int i = 0; i < root->GetNumChildren(true); ++i)
+		{
+			ElementDocument* document = root->GetChild(i)->GetOwnerDocument();
+			if (document)
+			{
+				document->DirtyMediaQueries();
+				document->DirtyDxAndDyProperties();
+			}
+		}
 	}
 }
 
