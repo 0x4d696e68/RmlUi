@@ -24,6 +24,7 @@ struct PropertyParserNumberData {
 		{"vx", Unit::VX},
 		{"vy", Unit::VY},
 		{"vm", Unit::VM},
+		{"vp", Unit::VP},
 	};
 };
 

@@ -66,6 +66,7 @@ float ComputeLength(NumericValue value, float font_size, float document_font_siz
 	case Unit::VX: return value.number * viewport_scale.x;
 	case Unit::VY: return value.number * viewport_scale.y;
 	case Unit::VM: return value.number * Math::Min(viewport_scale.x, viewport_scale.y);
+	case Unit::VP: return value.number * Math::Min(viewport_scale.x, 1.65f);
 	default: break;
 	}
 
