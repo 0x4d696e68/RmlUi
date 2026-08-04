@@ -663,9 +663,19 @@ void WidgetTextInput::ProcessEvent(Event& event)
 		if (event.GetTargetElement() == parent)
 		{
 			parent->SetPseudoClass("focus-visible", true);
-			if (UpdateSelection(false))
+
+			// MU: put the caret at the end of the value. Upstream leaves
+			// absolute_cursor_index wherever it was - zero for a field whose value was
+			// set from code - so autofocus, a tab, or a programmatic Focus() all drop
+			// the caret in front of the existing text. A click still lands where it was
+			// pressed: ProcessMouseButtonDown focuses first and dispatches Mousedown
+			// right after, and that sets the cursor from the mouse position.
+			//
+			// MoveCursorHorizontal already does UpdateSelection(false), MoveToCursor()
+			// and ShowCursor(true), which is what stood here before.
+			bool out_of_bounds = false;
+			if (MoveCursorHorizontal(CursorMovement::End, false, out_of_bounds))
 				FormatText();
-			ShowCursor(true);
 
 			if (TextInputHandler* handler = GetTextInputHandler())
 			{
