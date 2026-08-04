@@ -559,7 +559,7 @@ void ElementDocument::DirtyVwAndVhProperties()
 
 void ElementDocument::DirtyDxAndDyProperties()
 {
-	GetStyle()->DirtyPropertiesWithUnitsRecursive(Unit::VX | Unit::VY | Unit::VM);
+	GetStyle()->DirtyPropertiesWithUnitsRecursive(Unit::VX | Unit::VY | Unit::VM | Unit::VP);
 }
 
 void ElementDocument::OnPropertyChange(const PropertyIdSet& changed_properties)
