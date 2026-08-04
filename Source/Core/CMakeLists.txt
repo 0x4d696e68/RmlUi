@@ -357,6 +357,14 @@ target_sources(rmlui_core PRIVATE
 set_common_target_options(rmlui_core)
 
 target_include_directories(rmlui_core PRIVATE "${PROJECT_SOURCE_DIR}/Include")
+
+# FontEngineDefault/FreeTypeInterface.cpp includes <plutosvg-ft.h> unconditionally in
+# this fork: the freetype next to us is built with plutosvg as its SVG hook. Declared
+# here rather than hand-edited into the generated .vcxproj, which any cmake re-run wipes.
+target_include_directories(rmlui_core PRIVATE
+	"${PROJECT_SOURCE_DIR}/../plutosvg/source"
+	"${PROJECT_SOURCE_DIR}/../plutosvg/plutovg/include"
+)
 target_include_directories(rmlui_core INTERFACE
 	"$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/Include>"
 	"$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
