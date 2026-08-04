@@ -69,12 +69,13 @@ enum class Unit : uint64_t {
 	// RCSS itself - max-width/max-height can cap a box, but not a font-size, a margin
 	// or a position.
 	VM = 1ull << 32,
+	VP = 1ull << 33,
 
-	LENGTH = PX | DP | VW | VH | EM | REM | PPI_UNIT | VX | VY | VM,
+	LENGTH = PX | DP | VW | VH | EM | REM | PPI_UNIT | VX | VY | VM | VP,
 	LENGTH_PERCENT = LENGTH | PERCENT,
 	NUMBER_PERCENT = NUMBER | PERCENT,
 	NUMBER_LENGTH_PERCENT = NUMBER | LENGTH | PERCENT,
-	DP_SCALABLE_LENGTH = DP | PPI_UNIT | VX | VY | VM,
+	DP_SCALABLE_LENGTH = DP | PPI_UNIT | VX | VY | VM | VP,
 	ANGLE = DEG | RAD,
 	NUMERIC = NUMBER_LENGTH_PERCENT | ANGLE | X
 };
