@@ -550,14 +550,22 @@ bool ElementDocument::IsLayoutDirty()
 	return layout_dirty;
 }
 
+// A declaration that goes through var() is stored with the unit of the var() itself -
+// VAR_EXPRESSION, or SHORTHAND_PLACEHOLDER for the properties a var() shorthand expands
+// to - and only gets its real unit when ResolveVariables substitutes and re-parses it at
+// compute time. So the scan below cannot see that `font-size: var(--font-base)` is a
+// viewport length, and both must be dirtied unconditionally: without it a value that
+// reaches an element through a variable is the one thing on the page that does not
+// follow a resize.
 void ElementDocument::DirtyVwAndVhProperties()
 {
-	GetStyle()->DirtyPropertiesWithUnitsRecursive(Unit::VW | Unit::VH);
+	GetStyle()->DirtyPropertiesWithUnitsRecursive(Unit::VW | Unit::VH | Unit::VAR_EXPRESSION | Unit::SHORTHAND_PLACEHOLDER);
 }
 
 void ElementDocument::DirtyDxAndDyProperties()
 {
-	GetStyle()->DirtyPropertiesWithUnitsRecursive(Unit::VX | Unit::VY | Unit::VM | Unit::VP);
+	GetStyle()->DirtyPropertiesWithUnitsRecursive(Unit::VX | Unit::VY | Unit::VM | Unit::VP | Unit::VAR_EXPRESSION |
+		Unit::SHORTHAND_PLACEHOLDER);
 }
 
 void ElementDocument::OnPropertyChange(const PropertyIdSet& changed_properties)
