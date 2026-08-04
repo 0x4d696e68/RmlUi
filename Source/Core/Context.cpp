@@ -1261,9 +1261,16 @@ bool Context::OnFocusChange(Element* new_focus, bool focus_visible)
 	if (focus_visible)
 		parameters["focus_visible"] = true;
 
-	SendEvents(new_chain, old_chain, EventId::Focus, parameters);
-
+	// MU: commit the focus before the focus event, not after. WidgetTextInput asks for the
+	// keyboard from inside its own Focus handler (ShowCursor -> SetKeyboardActive ->
+	// SystemInterface::ActivateKeyboard), and that interface is only handed a caret position,
+	// so the client has to read the field off GetFocusElement(). Upstream still reports the
+	// previous element there, so per-field attributes such as data-no-keyboard were read from
+	// whatever was focused before - a keypad button, the other input row - and missed.
+	// Blur keeps its old ordering: it is dispatched above, while focus is still the old one.
 	focus = new_focus;
+
+	SendEvents(new_chain, old_chain, EventId::Focus, parameters);
 
 	// Raise the element's document to the front, if desired.
 	ElementDocument* document = focus->GetOwnerDocument();
