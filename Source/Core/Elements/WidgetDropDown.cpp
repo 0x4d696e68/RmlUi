@@ -424,7 +424,16 @@ void WidgetDropDown::OnChildAdd(Element* element)
 		return;
 
 	// Force to block display. Register a click handler so we can be notified of selection.
-	element->SetProperty(PropertyId::Display, Property(Style::Display::Block));
+	//
+	// MU: except when 'data-if' owns this element. DataViewIf reads "has no local display
+	// property" as "currently visible" (DataViewDefault.cpp:233), so a local one written here
+	// makes that test false from the very first update and the view can never hide the option
+	// - it only ever writes/clears the same local property. The visible state comes from the
+	// stylesheet instead (assets/style.css, `select selectbox option`), which is where the
+	// rest of the option skin already lives. Everything below still applies: an option that
+	// its condition allows must stay clickable and selectable.
+	if (!element->HasAttribute("data-if"))
+		element->SetProperty(PropertyId::Display, Property(Style::Display::Block));
 	element->SetProperty(PropertyId::Clip, Property(Style::Clip::Type::Auto));
 	element->AddEventListener(EventId::Click, this);
 
