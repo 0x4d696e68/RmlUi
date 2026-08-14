@@ -1,0 +1,64 @@
+<rml>
+<head>
+	<title>Transform on a subtree shown after load</title>
+	<link type="text/rcss" href="../style.rcss"/>
+	<link rel="help" href="https://www.w3.org/TR/css-transforms-1/#transform-rendering" />
+	<meta name="Description" content="An element that is 'display: none' while its ancestor's transform is resolved takes part in no stacking context, so the propagation at the end of Element::UpdateTransformState never reaches it and its dirty_transform stays false. Showing it later must still render it with the ancestor's matrix."/>
+	<meta name="Assert" content="Both windows are translated up by half their height, so their frames sit vertically centred. This part is never at issue."/>
+	<meta name="Assert" content="Tick the checkbox in the right window: its pane must appear in exactly the same place as the left pane, which was shown at load."/>
+	<meta name="Assert" content="If the propagation is missing, the right pane is drawn with no matrix at all, i.e. 150dp - half a window height - below the left one, outside the frame that contains it."/>
+	<style>
+		body {
+			background: #111;
+			color: #fff;
+			font-size: 15dp;
+		}
+		.window {
+			position: absolute;
+			top: 50%;
+			width: 300dp;
+			height: 300dp;
+			background: #3a3a3a;
+			border: 2px #888;
+			/* The frames are fine either way: they are dirtied by the transform property itself.
+			   Only the descendant that is hidden while this is resolved is at issue. */
+			transform: translateY(-50%);
+		}
+		#always { left: 50dp; }
+		#deferred { left: 400dp; }
+
+		.title {
+			height: 30dp;
+			line-height: 30dp;
+			padding: 0 10dp;
+			background: #555;
+		}
+		.pane {
+			/* Hidden at load, so it is laid out and rendered for the first time only after
+			   its window's transform has already been resolved. */
+			display: none;
+			margin: 20dp;
+			height: 170dp;
+			background: #e0cef7;
+			color: #222;
+			text-align: center;
+			line-height: 170dp;
+		}
+		input:checked ~ .pane { display: block; }
+	</style>
+</head>
+
+<body>
+<div id="always" class="window">
+	<div class="title">Shown at load</div>
+	<input id="show-always" type="checkbox" checked/><label for="show-always"> shown from the start</label>
+	<div class="pane">Reference pane</div>
+</div>
+
+<div id="deferred" class="window">
+	<div class="title">Shown after load</div>
+	<input id="show-deferred" type="checkbox"/><label for="show-deferred"> tick me</label>
+	<div class="pane">Deferred pane</div>
+</div>
+</body>
+</rml>

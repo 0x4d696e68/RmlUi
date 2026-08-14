@@ -144,7 +144,22 @@ void Element::Update(float dp_ratio, Vector2f vp_dimensions, const Vector2f& vie
 	meta->effects.InstanceEffects();
 
 	for (size_t i = 0; i < children.size(); i++)
-		children[i]->Update(dp_ratio, vp_dimensions,viewport_scale);
+	{
+		Element* child = children[i].get();
+
+		// mu-fork: the host keeps every window's document loaded and hides it instead of
+		// unloading, so most of the context's elements belong to documents nobody can see.
+		// Skip a hidden DOCUMENT's whole tree - the recursion must still enter hidden
+		// subtrees inside a visible document (custom element hooks rely on that). This is
+		// safe against the show/hide edges because ElementDocument::Show/Hide both run
+		// UpdateDocument() synchronously, so `visible` is already current when the next
+		// context update gets here. Anything dirtied while skipped is caught up by that
+		// same synchronous update inside Show().
+		if (!child->visible && child->owner_document == child)
+			continue;
+
+		child->Update(dp_ratio, vp_dimensions, viewport_scale);
+	}
 
 	if (!animations.empty() && IsVisible(true))
 	{
