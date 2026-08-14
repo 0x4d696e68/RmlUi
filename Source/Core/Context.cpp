@@ -30,7 +30,25 @@ static constexpr float UNIT_SCROLL_LENGTH = 80.f;   // [dp]
 // If the user stops scrolling for this amount of time in seconds before touch/click release, don't apply inertia.
 static constexpr float SCROLL_INERTIA_DELAY = 0.1f;
 static constexpr float TOUCH_MOVEMENT_DECAY_RATE = 5.0f;
-static constexpr float TOUCH_CLICK_MAX_DISTANCE = DOUBLE_CLICK_MAX_DIST; // [dp]
+// How far a finger may slide inside a scrollable container before the press is taken to be
+// a scroll and the click is cancelled. The mouse radius (3dp) is far below the slop of a
+// real fingertip, so an ordinary tap on a list row was being thrown away; 8dp is the slop
+// Android itself uses to tell a tap from a drag.
+static constexpr float TOUCH_CLICK_MAX_DISTANCE = 8.f; // [dp]
+
+// The element a double tap is meant for: the nearest ancestor-or-self listening for
+// dblclick, so two taps that hit different children of one row still count as one target,
+// while two taps on neighbouring rows never do. Falls back to the element itself.
+static Element* FindDoubleClickElement(Element* element)
+{
+	for (Element* ancestor = element; ancestor; ancestor = ancestor->GetParentNode())
+	{
+		if (ancestor->GetEventDispatcher()->HasListener(EventId::Dblclick))
+			return ancestor;
+	}
+
+	return element;
+}
 
 static void DebugVerifyLocaleSetting()
 {
@@ -691,8 +709,20 @@ bool Context::ProcessMouseButtonDown(int button_index, int key_modifier_state)
 
 			double click_time = GetSystemInterface()->GetElapsedTime();
 
-			if (active == last_click_element && float(click_time - last_click_time) < DOUBLE_CLICK_TIME &&
-				mouse_distance_squared < max_mouse_distance * max_mouse_distance)
+			// Comparing the pressed element itself is right for a mouse, which does not
+			// move between the two clicks. A finger lands on whichever child it happens to
+			// hit - a different cell of the same row each tap - so what is compared for
+			// touch is the element that would actually receive the dblclick.
+			Element* const click_target = press_from_touch ? FindDoubleClickElement(active) : active;
+			const bool same_target = (click_target == last_click_element) && (click_target || !press_from_touch);
+
+			// A fingertip covers millimetres and never repeats a pixel, so the radius a
+			// mouse is held to would reject every double tap. Touch is bounded by the
+			// target instead: two taps on one row count, two taps on neighbouring rows
+			// have different targets and do not.
+			const bool within_distance = press_from_touch || (mouse_distance_squared < max_mouse_distance * max_mouse_distance);
+
+			if (same_target && float(click_time - last_click_time) < DOUBLE_CLICK_TIME && within_distance)
 			{
 				if (hover)
 					propagate = hover->DispatchEvent(EventId::Dblclick, parameters);
@@ -702,7 +732,7 @@ bool Context::ProcessMouseButtonDown(int button_index, int key_modifier_state)
 			}
 			else
 			{
-				last_click_element = active;
+				last_click_element = click_target;
 				last_click_time = click_time;
 			}
 		}
@@ -955,7 +985,11 @@ bool Context::ProcessTouchStart(const Touch& touch, int key_modifier_state)
 	ProcessMouseMove(static_cast<int>(touch.position.x), static_cast<int>(touch.position.y), key_modifier_state);
 
 	// always assume touch press/release events are handled as left mouse button
-	return ProcessMouseButtonDown(0, key_modifier_state);
+	press_from_touch = true;
+	const bool result = ProcessMouseButtonDown(0, key_modifier_state);
+	press_from_touch = false;
+
+	return result;
 }
 
 bool Context::ProcessTouchMove(const Touch& touch, int key_modifier_state)
