@@ -346,6 +346,9 @@ private:
 	double last_click_time;
 	// Mouse position during the last mouse_down event.
 	Vector2i last_click_mouse_position;
+	// Set while ProcessTouchStart presses the button on behalf of a finger, so that the
+	// double-click test can be one a finger can actually pass.
+	bool press_from_touch = false;
 
 	// Input state; stored from the most recent input events we receive from the application.
 	Vector2i mouse_position;

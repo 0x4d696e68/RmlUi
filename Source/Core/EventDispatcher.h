@@ -48,6 +48,10 @@ public:
 	/// Detaches all events from this dispatcher and all child dispatchers.
 	void DetachAllEvents();
 
+	/// True when at least one listener is attached for the given event id, in either phase.
+	/// @param[in] id Type of the event to look for.
+	bool HasListener(EventId id) const;
+
 	/// Dispatches the specified event.
 	/// @param[in] target_element The element to target
 	/// @param[in] id The id of the event

@@ -72,6 +72,17 @@ void EventDispatcher::DetachAllEvents()
 		element->GetChild(i)->GetEventDispatcher()->DetachAllEvents();
 }
 
+bool EventDispatcher::HasListener(EventId id) const
+{
+	for (const auto& entry : listeners)
+	{
+		if (entry.id == id)
+			return true;
+	}
+
+	return false;
+}
+
 /*
     CollectedListener
 
