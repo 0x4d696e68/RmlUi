@@ -2,8 +2,10 @@
 #include "../../Include/RmlUi/Core/ComputedValues.h"
 #include "../../Include/RmlUi/Core/Context.h"
 #include "../../Include/RmlUi/Core/Element.h"
+#include "../../Include/RmlUi/Core/FontEffect.h"
 #include "../../Include/RmlUi/Core/FontEngineInterface.h"
 #include "../../Include/RmlUi/Core/Geometry.h"
+#include "../../Include/RmlUi/Core/Property.h"
 #include "../../Include/RmlUi/Core/PropertyDefinition.h"
 #include "../../Include/RmlUi/Core/RenderManager.h"
 #include "../../Include/RmlUi/Core/TextShapingContext.h"
@@ -80,9 +82,23 @@ bool DecoratorText::GenerateGeometry(Element* element, ElementData& element_data
 	const float opacity = computed.opacity();
 	const ColourbPremultiplied text_color = (inherit_color ? computed.color() : color).ToPremultiplied(opacity);
 
+	// Resolve the element's font-effect like ElementText does, so text decorators can be outlined from RCSS.
+	// Only reached when regenerating geometry: a font-effect declared through var() is re-substituted and
+	// re-parsed on every GetProperty call, which must not happen in the per-frame render path above.
+	FontEffectsHandle font_effects_handle = {};
+	if (computed.has_font_effect())
+	{
+		if (const Property* p_font_effect = element->GetProperty(PropertyId::FontEffect))
+		{
+			if (FontEffectsPtr font_effects = p_font_effect->Get<FontEffectsPtr>())
+				font_effects_handle = font_engine_interface->PrepareFontEffects(font_face_handle, font_effects->list);
+		}
+	}
+
 	RenderManager& render_manager = element->GetContext()->GetRenderManager();
 	TexturedMeshList mesh_list;
-	font_engine_interface->GenerateString(render_manager, font_face_handle, {}, text, offset, text_color, opacity, text_shaping_context, mesh_list);
+	font_engine_interface->GenerateString(render_manager, font_face_handle, font_effects_handle, text, offset, text_color, opacity,
+		text_shaping_context, mesh_list);
 
 	if (mesh_list.empty())
 		return false;
