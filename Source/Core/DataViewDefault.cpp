@@ -424,7 +424,14 @@ String DataViewText::BuildText() const
 	return result;
 }
 
-DataViewFor::DataViewFor(Element* element) : DataView(element, 0) {}
+// mu-fork: sort strictly ahead of every non-structural view at the same tree depth. The
+// elements this view generates are siblings of the template, so the views copied onto them
+// (data-class, data-attr, data-style, data-if) carry the same depth and, with an equal sort
+// order, std::sort was free to run them first. On a shrinking array they then evaluate an
+// iterator alias whose index no longer exists - one 'array index out of bounds' warning per
+// view per removed row - before this view gets to remove the row. Bias -1000 is the lowest
+// the sort order allows, and still lands after every view one level up.
+DataViewFor::DataViewFor(Element* element) : DataView(element, -1000) {}
 
 bool DataViewFor::Initialize(DataModel& model, Element* element, const String& in_expression, const String& /*modifier*/)
 {
