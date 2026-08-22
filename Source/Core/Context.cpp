@@ -260,6 +260,18 @@ bool Context::Update()
 	{
 		if (auto doc = root->GetChild(i)->GetOwnerDocument())
 		{
+			// mu-fork: the update above skips hidden documents entirely (Element.cpp), while the
+			// layout below is not skipped, and the host keeps writing into closed windows (window
+			// titles at load time, data models every frame). A text node created while the document
+			// was being skipped has never been through ComputeValues, so its computed font-face
+			// handle is still null and formatting it logs a missing font face. Give such a document
+			// the property pass it missed, in the same order a visible one gets it.
+			if (doc->layout_dirty && !doc->IsVisible())
+			{
+				doc->UpdateDocument();
+				continue;
+			}
+
 			doc->UpdateLayout();
 			doc->UpdatePosition();
 		}

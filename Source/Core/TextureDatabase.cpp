@@ -162,6 +162,17 @@ bool FileTextureDatabase::ReleaseTexture(RenderInterface* render_interface, cons
 		return true;
 	}
 
+	// A load that failed is remembered so that it is not retried on every frame, and
+	// releasing the texture is the one moment that memo is meant to end: the caller is
+	// saying the file may be something else now. Without this a texture that was missing
+	// once stays missing for the lifetime of the render manager, however many times the
+	// document is rebuilt - which is the normal case when the files arrive over a network.
+	if (texture.load_texture_failed)
+	{
+		texture = {};
+		return true;
+	}
+
 	return false;
 }
 
@@ -172,8 +183,10 @@ void FileTextureDatabase::ReleaseAllTextures(RenderInterface* render_interface)
 		if (texture.texture_handle)
 		{
 			render_interface->ReleaseTexture(texture.texture_handle);
-			texture = {};
 		}
+
+		// Cleared whether it held a handle or a failure - see ReleaseTexture above.
+		texture = {};
 	}
 }
 
