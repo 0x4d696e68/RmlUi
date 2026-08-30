@@ -332,8 +332,12 @@ bool Factory::InstanceElementText(Element* parent, const String& in_text)
 	RMLUI_ASSERT(parent);
 
 	String text;
+	bool text_was_translated = false;
 	if (SystemInterface* system_interface = GetSystemInterface())
+	{
 		system_interface->TranslateString(text, in_text);
+		text_was_translated = (text != in_text);
+	}
 
 	// If this text node only contains white-space we don't want to construct it.
 	const bool only_white_space = std::all_of(text.begin(), text.end(), &StringUtilities::IsWhitespace);
@@ -411,6 +415,11 @@ bool Factory::InstanceElementText(Element* parent, const String& in_text)
 		text = StringUtilities::DecodeRml(text);
 
 		text_element->SetText(text);
+
+		// Keeping the pre-translation string is what lets the host re-run the translation
+		// in place when the language changes, instead of re-parsing the whole document.
+		if (text_was_translated)
+			text_element->SetSourceText(in_text);
 
 		// Add to active node.
 		parent->AppendChild(std::move(element));

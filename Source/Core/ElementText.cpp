@@ -356,6 +356,16 @@ void ElementText::SuppressAutoLayout()
 	dirty_layout_on_change = false;
 }
 
+void ElementText::SetSourceText(String source)
+{
+	source_text = std::move(source);
+}
+
+const String& ElementText::GetSourceText() const
+{
+	return source_text;
+}
+
 void ElementText::OnPropertyChange(const PropertyIdSet& changed_properties)
 {
 	RMLUI_ZoneScoped;
