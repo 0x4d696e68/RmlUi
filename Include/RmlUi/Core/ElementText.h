@@ -45,6 +45,11 @@ public:
 	/// Prevents the element from dirtying its document's layout when its text is changed.
 	void SuppressAutoLayout();
 
+	/// Sets the pre-translation string this text element was instanced from.
+	void SetSourceText(String source);
+	/// Returns the pre-translation string, or an empty string when the text was never translated.
+	const String& GetSourceText() const;
+
 	// Used to store the position and length of each line we have geometry for.
 	struct Line {
 		Line(String text, Vector2f position) : text(std::move(text)), position(position), width(0) {}
@@ -75,6 +80,8 @@ private:
 	void GenerateDecoration(Mesh& mesh, FontFaceHandle font_face_handle);
 
 	String text;
+
+	String source_text;
 
 	LineList lines;
 

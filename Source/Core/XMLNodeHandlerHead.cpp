@@ -115,12 +115,12 @@ bool XMLNodeHandlerHead::ElementData(XMLParser* parser, const String& data, XMLD
 {
 	const String& tag = parser->GetParseFrame()->tag;
 
-	// Store the title
+	// Store the title. Kept untranslated on purpose (mu-fork): the host resolves it when
+	// it uses it, so a language change can resolve it again without re-parsing the
+	// document. The only consumers are the host and the debugger.
 	if (tag == "title")
 	{
-		SystemInterface* system_interface = GetSystemInterface();
-		if (system_interface != nullptr)
-			system_interface->TranslateString(parser->GetDocumentHeader()->title, data);
+		parser->GetDocumentHeader()->title = data;
 	}
 
 	// Store an inline script
