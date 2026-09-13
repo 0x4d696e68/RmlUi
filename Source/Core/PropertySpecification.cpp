@@ -534,8 +534,13 @@ PropertySpecification::ParsePropertyResult PropertySpecification::ParsePropertyV
 
 	auto IsAllWhitespace = [](const String& string) { return std::all_of(string.begin(), string.end(), StringUtilities::IsWhitespace); };
 	auto IsIdentifierChar = [](char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' || c == '_'; };
-	auto EndsWithVariable = [&](const String& string) {
-		return StringUtilities::EndsWith(string, "var") && (string.size() == 3 || !IsIdentifierChar(string[string.size() - 4]));
+	auto EndsWithSubstitutionFunction = [&](const String& string) {
+		for (const StringView name : {StringView("var"), StringView("calc"), StringView("min"), StringView("max"), StringView("clamp")})
+		{
+			if (StringUtilities::EndsWith(string, name) && (string.size() == name.size() || !IsIdentifierChar(string[string.size() - name.size() - 1])))
+				return true;
+		}
+		return false;
 	};
 
 	auto Error = [&]() {
@@ -589,7 +594,7 @@ PropertySpecification::ParsePropertyResult PropertySpecification::ParsePropertyV
 			}
 			else if (character == '(')
 			{
-				if (EndsWithVariable(value))
+				if (EndsWithSubstitutionFunction(value))
 					return ContainsVariable();
 				open_parentheses = 1;
 				value += character;
@@ -605,7 +610,7 @@ PropertySpecification::ParsePropertyResult PropertySpecification::ParsePropertyV
 		{
 			if (character == '(')
 			{
-				if (EndsWithVariable(value))
+				if (EndsWithSubstitutionFunction(value))
 					return ContainsVariable();
 				open_parentheses++;
 			}

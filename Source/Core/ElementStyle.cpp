@@ -18,6 +18,7 @@
 #include "ComputeProperty.h"
 #include "ControlledLifetimeResource.h"
 #include "ElementDefinition.h"
+#include "MathExpression.h"
 #include "PropertiesIterator.h"
 #include "PropertyShorthandDefinition.h"
 #include <algorithm>
@@ -217,8 +218,8 @@ ElementStyle::SubstitutionResult ElementStyle::SubstituteVariableOnce(const Prop
 		return SubstitutionResult::Error;
 	}
 
-	String substitution_value;
-	if (custom_property->unit == Unit::VAR_EXPRESSION)
+	String substitution_value = custom_property->Get<String>();
+	if (custom_property->unit == Unit::VAR_EXPRESSION && substitution_value.find("var(") != String::npos)
 	{
 		// Reset cycle chain if (and only if) moving up to a new element.
 		SmallUnorderedSet<String> new_cycle_chain;
@@ -230,12 +231,8 @@ ElementStyle::SubstitutionResult ElementStyle::SubstituteVariableOnce(const Prop
 		// are fully determined here, so fetch them from their elements.
 		const PropertySources& next_sources = (property_element == sources.element ? sources : property_element->GetStyle()->GetPropertySources());
 
-		if (!SubstituteVariables(next_sources, custom_property->Get<String>(), variable_dependencies, next_cycle_chain, substitution_value))
+		if (!SubstituteVariables(next_sources, substitution_value, variable_dependencies, next_cycle_chain, substitution_value))
 			return SubstitutionResult::Error;
-	}
-	else
-	{
-		substitution_value = custom_property->Get<String>();
 	}
 
 	return SubstituteResult(std::move(substitution_value));
@@ -293,9 +290,14 @@ const Property* ElementStyle::ResolveVariables(const PropertySources& sources, c
 	if (property->unit != Unit::VAR_EXPRESSION)
 		return property;
 
-	String substitution_result;
-	SmallUnorderedSet<String> cycle_chain;
-	if (!SubstituteVariables(sources, property->Get<String>(), variable_dependencies, cycle_chain, substitution_result))
+	String substitution_result = property->Get<String>();
+	if (substitution_result.find("var(") != String::npos)
+	{
+		SmallUnorderedSet<String> cycle_chain;
+		if (!SubstituteVariables(sources, substitution_result, variable_dependencies, cycle_chain, substitution_result))
+			return nullptr;
+	}
+	if (!FoldMathFunctions(substitution_result, sources.element, id))
 		return nullptr;
 
 	const PropertyDefinition* property_definition = StyleSheetSpecification::GetProperty(id);
@@ -350,8 +352,11 @@ void ElementStyle::ExpandVarShorthands(PropertyDictionary& out_substituted_short
 			variable_dependencies.clear();
 			cycle_chain.clear();
 
-			String substitution_result;
-			if (!SubstituteVariables(sources, property.Get<String>(), variable_dependencies, cycle_chain, substitution_result))
+			String substitution_result = property.Get<String>();
+			if (substitution_result.find("var(") != String::npos &&
+				!SubstituteVariables(sources, substitution_result, variable_dependencies, cycle_chain, substitution_result))
+				continue;
+			if (!FoldMathFunctions(substitution_result, sources.element, PropertyId::Invalid))
 				continue;
 
 			if (!StyleSheetSpecification::GetPropertySpecification().ParseShorthandDeclaration(out_substituted_shorthands, shorthand_id,
@@ -663,7 +668,8 @@ const Property* ElementStyle::GetProperty(PropertyId id) const
 const Property* ElementStyle::GetCustomProperty(const String& name) const
 {
 	const PropertyElementPair result = GetSpecifiedCustomProperty(GetPropertySources(), name);
-	if (!result.element || !result.property || result.property->unit != Unit::VAR_EXPRESSION)
+	if (!result.element || !result.property || result.property->unit != Unit::VAR_EXPRESSION ||
+		result.property->Get<String>().find("var(") == String::npos)
 		return result.property;
 
 	SmallUnorderedSet<String> variable_dependencies;
@@ -707,7 +713,7 @@ const PropertyDictionary& ElementStyle::GetLocalStyleProperties() const
 	return inline_properties;
 }
 
-static float ComputeLength(NumericValue value, Element* element)
+float ComputeLength(NumericValue value, Element* element)
 {
 	float font_size = 0.f;
 	float doc_font_size = 0.f;
@@ -992,7 +998,7 @@ PropertyIdSet ElementStyle::ComputeValues(Style::ComputedValues& values, const S
 				dirty_properties.Insert(id);
 		}
 
-		if (dirty_em_properties && property->unit == Unit::EM)
+		if (dirty_em_properties && (property->unit == Unit::EM || id_property_pair.second.unit == Unit::VAR_EXPRESSION))
 			dirty_properties.Insert(id);
 
 		ComputeValue(values, dp_ratio, vp_dimensions, viewport_scale, font_size, document_font_size, dirty_font_face_handle, id, property);

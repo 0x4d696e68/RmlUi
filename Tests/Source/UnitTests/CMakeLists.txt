@@ -24,6 +24,7 @@ add_executable(${TARGET_NAME}
 	Localization.cpp
 	main.cpp
 	Math.cpp
+	MathExpression.cpp
 	MediaQuery.cpp
 	Navigation.cpp
 	Properties.cpp

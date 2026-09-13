@@ -3079,7 +3079,7 @@ void Element::OnStyleSheetChangeRecursive()
 void Element::OnDpRatioChangeRecursive()
 {
 	meta->effects.DirtyEffects();
-	GetStyle()->DirtyPropertiesWithUnits(Unit::DP_SCALABLE_LENGTH);
+	GetStyle()->DirtyPropertiesWithUnits(Unit::DP_SCALABLE_LENGTH | Unit::VAR_EXPRESSION);
 
 	OnDpRatioChange();
 
