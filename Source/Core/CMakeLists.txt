@@ -121,6 +121,8 @@ add_library(rmlui_core
 	LogDefault.cpp
 	LogDefault.h
 	Math.cpp
+	MathExpression.cpp
+	MathExpression.h
 	Memory.cpp
 	Memory.h
 	MeshUtilities.cpp

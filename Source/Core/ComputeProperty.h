@@ -6,10 +6,14 @@
 namespace Rml {
 
 class Property;
+class Element;
 
 // Note that numbers and percentages are not lengths, they have to be resolved elsewhere.
 float ComputeLength(NumericValue value, float font_size, float document_font_size, float dp_ratio, Vector2f vp_dimensions,
 	const Vector2f& viewport_scale);
+
+// Resolves a length against the element's own font size, document, and context.
+float ComputeLength(NumericValue value, Element* element);
 
 float ComputeAngle(NumericValue value);
 

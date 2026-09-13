@@ -40,6 +40,12 @@ void PropertyParserNumber::Shutdown()
 	parser_data.Shutdown();
 }
 
+Unit PropertyParserNumber::LookupUnit(const String& unit_name)
+{
+	const auto it = parser_data->unit_string_map.find(unit_name);
+	return (it != parser_data->unit_string_map.end() ? it->second : Unit::UNKNOWN);
+}
+
 PropertyParserNumber::PropertyParserNumber(Units units, Unit zero_unit) : units(units), zero_unit(zero_unit) {}
 
 PropertyParserNumber::~PropertyParserNumber() {}

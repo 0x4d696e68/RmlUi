@@ -24,6 +24,9 @@ public:
 	static void Initialize();
 	static void Shutdown();
 
+	/// Returns the unit named by the given suffix, or Unit::UNKNOWN if it is not a recognized unit.
+	static Unit LookupUnit(const String& unit_name);
+
 private:
 	static ControlledLifetimeResource<struct PropertyParserNumberData> parser_data;
 
