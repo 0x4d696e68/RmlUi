@@ -84,11 +84,19 @@ namespace {
 	struct SearchNavigationResult {
 		Element* element = nullptr;
 		int heuristic = Infinite;
+		float cross_offset = 0.f;
 	};
+
+	float GetNavigationCrossOffset(const Rectanglef& source, const Rectanglef& target, NavigationSearchDirection direction)
+	{
+		const bool horizontal = (direction == NavigationSearchDirection::Left || direction == NavigationSearchDirection::Right);
+		const int cross = horizontal ? 1 : 0;
+		return Math::Absolute(target.Center()[cross] - source.Center()[cross]);
+	}
 
 	// Search all descendents to determine which element minimizes the navigation heuristic.
 	void SearchNavigationTarget(SearchNavigationResult& best_result, Element* element, NavigationSearchDirection direction,
-		const Rectanglef& bounding_box, Element* exclude_element)
+		const Rectanglef& bounding_box, Element* exclude_element, const Rectanglef* clip_box)
 	{
 		const int num_children = element->GetNumChildren();
 		for (int child_index = 0; child_index < num_children; child_index++)
@@ -101,21 +109,145 @@ namespace {
 			if (can_focus == CanFocus::Yes)
 			{
 				const Vector2f position = child->GetAbsoluteOffset(BoxArea::Border);
-				const Rectanglef target_box = Rectanglef::FromPositionSize(position, child->GetBox().GetSize(BoxArea::Border));
+				Rectanglef target_box = Rectanglef::FromPositionSize(position, child->GetBox().GetSize(BoxArea::Border));
 
-				const int heuristic = GetNavigationHeuristic(bounding_box, target_box, direction);
-				if (heuristic < best_result.heuristic)
+				bool visible = true;
+				if (clip_box)
 				{
-					best_result.element = child;
-					best_result.heuristic = heuristic;
+					target_box = target_box.Intersect(*clip_box);
+					visible = target_box.Width() > 0.f && target_box.Height() > 0.f;
+				}
+
+				if (visible)
+				{
+					const int heuristic = GetNavigationHeuristic(bounding_box, target_box, direction);
+					if (heuristic < best_result.heuristic)
+					{
+						best_result.element = child;
+						best_result.heuristic = heuristic;
+						best_result.cross_offset = GetNavigationCrossOffset(bounding_box, target_box, direction);
+					}
+					else if (heuristic == best_result.heuristic && heuristic != Infinite)
+					{
+						const float cross_offset = GetNavigationCrossOffset(bounding_box, target_box, direction);
+						if (cross_offset < best_result.cross_offset)
+						{
+							best_result.element = child;
+							best_result.cross_offset = cross_offset;
+						}
+					}
 				}
 			}
-			else if (can_focus == CanFocus::NoAndNoChildren || IsScrollContainer(child))
+			else if (can_focus == CanFocus::NoAndNoChildren)
 			{
 				continue;
 			}
 
-			SearchNavigationTarget(best_result, child, direction, bounding_box, exclude_element);
+			if (IsScrollContainer(child))
+			{
+				const Vector2f position = child->GetAbsoluteOffset(BoxArea::Padding);
+				Rectanglef child_clip = Rectanglef::FromPositionSize(position, child->GetBox().GetSize(BoxArea::Padding));
+				if (clip_box)
+					child_clip = child_clip.Intersect(*clip_box);
+
+				if (child_clip.Width() <= 0.f || child_clip.Height() <= 0.f)
+					continue;
+
+				SearchNavigationTarget(best_result, child, direction, bounding_box, exclude_element, &child_clip);
+				continue;
+			}
+
+			SearchNavigationTarget(best_result, child, direction, bounding_box, exclude_element, clip_box);
+		}
+	}
+
+	bool CanScrollAlongAxis(Element* element, bool horizontal)
+	{
+		const ComputedValues& computed = element->GetComputedValues();
+		const Style::Overflow overflow = horizontal ? computed.overflow_x() : computed.overflow_y();
+
+		return overflow == Style::Overflow::Auto || overflow == Style::Overflow::Scroll;
+	}
+
+	bool CanScrollInDirection(Element* element, NavigationSearchDirection direction)
+	{
+		const bool horizontal = (direction == NavigationSearchDirection::Left || direction == NavigationSearchDirection::Right);
+
+		if (!CanScrollAlongAxis(element, horizontal))
+			return false;
+
+		switch (direction)
+		{
+		case NavigationSearchDirection::Up: return element->GetScrollTop() > 0.5f;
+		case NavigationSearchDirection::Down: return element->GetScrollTop() + element->GetClientHeight() < element->GetScrollHeight() - 0.5f;
+		case NavigationSearchDirection::Left: return element->GetScrollLeft() > 0.5f;
+		case NavigationSearchDirection::Right: return element->GetScrollLeft() + element->GetClientWidth() < element->GetScrollWidth() - 0.5f;
+		}
+		return false;
+	}
+
+	void ScrollInDirection(Element* element, NavigationSearchDirection direction)
+	{
+		static constexpr float StepFraction = 0.25f;
+
+		const float step_y = Math::Max(1.f, element->GetClientHeight() * StepFraction);
+		const float step_x = Math::Max(1.f, element->GetClientWidth() * StepFraction);
+
+		switch (direction)
+		{
+		case NavigationSearchDirection::Up: element->SetScrollTop(element->GetScrollTop() - step_y); break;
+		case NavigationSearchDirection::Down: element->SetScrollTop(element->GetScrollTop() + step_y); break;
+		case NavigationSearchDirection::Left: element->SetScrollLeft(element->GetScrollLeft() - step_x); break;
+		case NavigationSearchDirection::Right: element->SetScrollLeft(element->GetScrollLeft() + step_x); break;
+		}
+	}
+
+	Element* GetNearestScrollContainer(Element* element, Element* document)
+	{
+		for (element = element->GetParentNode(); element && element != document; element = element->GetParentNode())
+		{
+			if (IsScrollContainer(element))
+				return element;
+		}
+		return nullptr;
+	}
+
+	void ScrollNavigationTargetIntoView(Element* element, Element* document)
+	{
+		Element* container = GetNearestScrollContainer(element, document);
+		if (!container)
+		{
+			element->ScrollIntoView(ScrollAlignment::Adaptive);
+			return;
+		}
+
+		const Vector2f size = element->GetBox().GetSize(BoxArea::Border);
+		const Vector2f client = {container->GetClientWidth(), container->GetClientHeight()};
+		const bool fits_x = (size.x <= client.x + 0.5f);
+		const bool fits_y = (size.y <= client.y + 0.5f);
+
+		if (fits_x && fits_y)
+		{
+			element->ScrollIntoView(ScrollAlignment::Adaptive);
+			return;
+		}
+
+		const Vector2f offset = element->GetAbsoluteOffset(BoxArea::Border) - container->GetAbsoluteOffset(BoxArea::Padding);
+
+		if (fits_y && CanScrollAlongAxis(container, false))
+		{
+			if (offset.y < 0.f)
+				container->SetScrollTop(container->GetScrollTop() + offset.y);
+			else if (offset.y + size.y > client.y)
+				container->SetScrollTop(container->GetScrollTop() + offset.y + size.y - client.y);
+		}
+
+		if (fits_x && CanScrollAlongAxis(container, true))
+		{
+			if (offset.x < 0.f)
+				container->SetScrollLeft(container->GetScrollLeft() + offset.x);
+			else if (offset.x + size.x > client.x)
+				container->SetScrollLeft(container->GetScrollLeft() + offset.x + size.x - client.x);
 		}
 	}
 
@@ -601,7 +733,7 @@ void ElementDocument::ProcessDefaultAction(Event& event)
 			{
 				if (element->Focus(true))
 				{
-					element->ScrollIntoView(ScrollAlignment::Adaptive);
+					ScrollNavigationTargetIntoView(element, this);
 					event.StopPropagation();
 				}
 			}
@@ -644,12 +776,30 @@ void ElementDocument::ProcessDefaultAction(Event& event)
 			Element* focus_node = GetNearestFocusable(GetFocusLeafNode());
 			if (const Property* nav_property = focus_node->GetLocalProperty(property_id))
 			{
-				if (Element* next = FindNextNavigationElement(focus_node, direction, *nav_property))
+				if (focus_node != this && IsScrollContainer(focus_node) && CanScrollInDirection(focus_node, direction))
+				{
+					ScrollInDirection(focus_node, direction);
+					event.StopPropagation();
+				}
+				else if (Element* next = FindNextNavigationElement(focus_node, direction, *nav_property))
 				{
 					if (next->Focus(true))
 					{
-						next->ScrollIntoView(ScrollAlignment::Adaptive);
+						ScrollNavigationTargetIntoView(next, this);
 						event.StopPropagation();
+					}
+				}
+				else if (focus_node != this)
+				{
+					for (Element* container = GetNearestScrollContainer(focus_node, this); container;
+						 container = GetNearestScrollContainer(container, this))
+					{
+						if (CanScrollInDirection(container, direction))
+						{
+							ScrollInDirection(container, direction);
+							event.StopPropagation();
+							break;
+						}
 					}
 				}
 			}
@@ -818,19 +968,19 @@ Element* ElementDocument::FindNextNavigationElement(Element* current_element, Na
 		const Vector2f position = current_element->GetAbsoluteOffset(BoxArea::Border);
 		const Rectanglef bounding_box = Rectanglef::FromPositionSize(position, current_element->GetBox().GetSize(BoxArea::Border));
 
-		auto GetNearestScrollContainer = [this](Element* element) -> Element* {
-			for (element = element->GetParentNode(); element; element = element->GetParentNode())
-			{
-				if (IsScrollContainer(element))
-					return element;
-			}
-			return this;
-		};
-		Element* start_element = GetNearestScrollContainer(current_element);
+		Element* start_element = GetNearestScrollContainer(current_element, this);
 
-		SearchNavigationResult best_result;
-		SearchNavigationTarget(best_result, start_element, direction, bounding_box, current_element);
-		return best_result.element;
+		for (;;)
+		{
+			Element* search_root = start_element ? start_element : this;
+
+			SearchNavigationResult best_result;
+			SearchNavigationTarget(best_result, search_root, direction, bounding_box, current_element, nullptr);
+			if (best_result.element || !start_element)
+				return best_result.element;
+
+			start_element = GetNearestScrollContainer(start_element, this);
+		}
 	}
 	break;
 	default: break;

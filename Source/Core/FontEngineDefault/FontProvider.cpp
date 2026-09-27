@@ -82,6 +82,13 @@ void FontProvider::ReleaseFontResources()
 		name_family.second->ReleaseFontResources();
 }
 
+void FontProvider::ReleaseFontFaces()
+{
+	RMLUI_ASSERT(g_font_provider);
+	g_font_provider->fallback_font_faces.clear();
+	g_font_provider->font_families.clear();
+}
+
 bool FontProvider::LoadFontFace(const String& file_name, int face_index, bool fallback_face, Style::FontWeight weight)
 {
 	return LoadFontFace(file_name, face_index, {}, Style::FontStyle::Normal, weight, fallback_face);

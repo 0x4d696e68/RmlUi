@@ -435,6 +435,17 @@ void ReleaseFontResources()
 		name_context.second->Update();
 }
 
+void ReleaseFontFaces()
+{
+	if (!font_interface)
+		return;
+
+	for (const auto& name_context : core_data->contexts)
+		name_context.second->GetRootElement()->DirtyFontFaceRecursive();
+
+	font_interface->ReleaseFontFaces();
+}
+
 void ReleaseRenderManagers()
 {
 	auto& contexts = core_data->contexts;

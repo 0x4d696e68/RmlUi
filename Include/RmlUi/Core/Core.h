@@ -166,6 +166,7 @@ RMLUICORE_API void ReleaseCompiledGeometry(RenderInterface* render_interface = n
 /// Releases unused font textures and rendered glyphs to free up memory, and regenerates actively used fonts.
 /// @note Invalidates all existing FontFaceHandles returned from the font engine.
 RMLUICORE_API void ReleaseFontResources();
+RMLUICORE_API void ReleaseFontFaces();
 /// Releases render managers that are not used by any contexts.
 /// @note Any resources referring to the render manager in user space must be cleared first, including callback textures and compiled geometry.
 /// @note Also releases font resources, which invalidates all existing FontFaceHandles returned from the font engine.

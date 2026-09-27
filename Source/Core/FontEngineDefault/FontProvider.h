@@ -55,6 +55,8 @@ public:
 	/// Releases resources owned by sized font faces, including their textures and rendered glyphs.
 	static void ReleaseFontResources();
 
+	static void ReleaseFontFaces();
+
 private:
 	FontProvider();
 	~FontProvider();

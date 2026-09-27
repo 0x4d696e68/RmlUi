@@ -70,4 +70,6 @@ int FontEngineInterface::GetVersion(FontFaceHandle /*handle*/)
 
 void FontEngineInterface::ReleaseFontResources() {}
 
+void FontEngineInterface::ReleaseFontFaces() {}
+
 } // namespace Rml

@@ -589,6 +589,7 @@ public:
 
 	/// Return the computed values of the element's properties. These values are updated as appropriate on every Context::Update.
 	const ComputedValues& GetComputedValues() const;
+	void DirtyFontFaceRecursive();
 
 protected:
 	void Update(float dp_ratio, Vector2f vp_dimensions, const Vector2f& viewport_scale);
@@ -679,7 +680,6 @@ private:
 	void UpdateTransformState();
 
 	void OnDpRatioChangeRecursive();
-	void DirtyFontFaceRecursive();
 
 	void ClampScrollOffset();
 	void ClampScrollOffsetRecursive();

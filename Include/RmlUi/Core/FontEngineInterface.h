@@ -113,6 +113,8 @@ public:
 	/// Called by RmlUi when it wants to garbage collect memory used by fonts.
 	/// @note All existing FontFaceHandles and FontEffectsHandles are considered invalid after this call.
 	virtual void ReleaseFontResources();
+
+	virtual void ReleaseFontFaces();
 };
 
 } // namespace Rml

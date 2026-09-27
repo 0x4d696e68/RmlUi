@@ -83,4 +83,9 @@ void FontEngineInterfaceDefault::ReleaseFontResources()
 	FontProvider::ReleaseFontResources();
 }
 
+void FontEngineInterfaceDefault::ReleaseFontFaces()
+{
+	FontProvider::ReleaseFontFaces();
+}
+
 } // namespace Rml
