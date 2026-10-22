@@ -99,6 +99,7 @@ struct LuaDataModel {
 	int valuestore_ref = LUA_NOREF;
 	int tablestore_ref = LUA_NOREF;
 	int keystore_ref = LUA_NOREF;
+	int self_ref = LUA_NOREF;
 };
 
 struct TableProxy {
@@ -108,6 +109,21 @@ struct TableProxy {
 };
 
 static struct TableProxy* NewTableProxy(struct LuaDataModel* model, int key_ref);
+
+static void SetProxyOwner(lua_State* L, int proxy_index)
+{
+	proxy_index = lua_absindex(L, proxy_index);
+#if LUA_VERSION_NUM >= 504
+	lua_setiuservalue(L, proxy_index, 1);
+#elif LUA_VERSION_NUM >= 502
+	lua_setuservalue(L, proxy_index);
+#else
+	lua_newtable(L);
+	lua_insert(L, -2);
+	lua_rawseti(L, -2, 1);
+	lua_setfenv(L, proxy_index);
+#endif
+}
 static struct TableProxy* ToTableProxy(lua_State* L, int index)
 {
 	return (struct TableProxy*)luaL_testudata(L, index, RMLTABLEPROXY);
@@ -316,6 +332,11 @@ static int TableProxyGet(lua_State* L)
 	// 1 = table proxy, 2 = key
 	struct TableProxy* proxy = (struct TableProxy*)lua_touserdata(L, 1);
 
+	if (proxy->model->model_ref == LUA_NOREF)
+	{
+		return luaL_error(L, "DataModel closed");
+	}
+
 	lua_rawgeti(L, LUA_REGISTRYINDEX, proxy->model->tablestore_ref);
 	// -1 = tablestore
 	lua_rawgeti(L, -1, proxy->table_ref);
@@ -396,6 +417,11 @@ static int TableProxySet(lua_State* L)
 {
 	// 1 = table proxy, 2 = key, 3 = value
 	struct TableProxy* proxy = (struct TableProxy*)lua_touserdata(L, 1);
+
+	if (proxy->model->model_ref == LUA_NOREF)
+	{
+		return luaL_error(L, "DataModel closed");
+	}
 
 	struct TableProxy* value_proxy = ToTableProxy(L, 3);
 	if (value_proxy != nullptr)
@@ -523,6 +549,12 @@ static struct TableProxy* NewTableProxy(struct LuaDataModel* model, int key_ref)
 		luaL_setfuncs(L, l, 0);
 	}
 	lua_setmetatable(L, -2);
+
+	if (model->self_ref != LUA_NOREF)
+	{
+		lua_rawgeti(L, LUA_REGISTRYINDEX, model->self_ref);
+		SetProxyOwner(L, -2);
+	}
 
 	return proxy;
 }
@@ -714,6 +746,8 @@ bool OpenLuaDataModel(lua_State* L, Context* context, int name_index, int table_
 	model->constructor = constructor;
 	model->handle = constructor.GetModelHandle();
 	model->objectDef = new LuaObjectDef(model);
+	lua_pushvalue(L, -1);
+	model->self_ref = luaL_ref(L, LUA_REGISTRYINDEX);
 
 	lua_newtable(L);
 	lua_pushvalue(L, -2);
@@ -794,6 +828,9 @@ void CloseLuaDataModel(lua_State* L, Context* context, int name_index)
 	model->objectDef = nullptr;
 
 	model->model_ref = LUA_NOREF;
+
+	luaL_unref(L, LUA_REGISTRYINDEX, model->self_ref);
+	model->self_ref = LUA_NOREF;
 
 	PushDataModelsTable(L);
 	// -1 = data models table
